@@ -1,5 +1,5 @@
 """
-Análisis de Noticias de Ciberseguridad con Llama 3 (Groq)
+Análisis de Noticias Temático con Llama 3 (Groq)
 Basado en la Teoría de la Reflexividad de George Soros
 
 Analiza las noticias extraídas para detectar:
@@ -9,50 +9,50 @@ Analiza las noticias extraídas para detectar:
 - Entidades clave mencionadas
 """
 
-import pandas as pd
-from groq import Groq
+import os
+import sys
 import json
 import time
-import os
+import glob
+import pandas as pd
 from datetime import datetime
+from groq import Groq
 from dotenv import load_dotenv
+
+# Add project root to path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+import config
 
 # Cargar variables de entorno
 load_dotenv()
 
-# Add project root to path to find .env if running from src
-import sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-
-
 # --- CONFIGURACIÓN ---
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
-# Ruta del archivo de entrada (el más reciente de SerpAPI)
-DATA_DIR = os.path.join(os.getcwd(), "data")
-INPUT_FILE = None # Will find latest in main
-
 # Configuración del Modelo
-MODEL_ID = "llama-3.3-70b-versatile"  # Modelo potente y rápido
+MODEL_ID = "llama-3.3-70b-versatile" 
 
 # Inicializar Cliente
 client = Groq(api_key=GROQ_API_KEY)
 
 
-def analizar_noticia_reflexividad(texto):
+def analizar_noticia_reflexividad(texto, context_prompt, categories):
     """
-    Envía el texto a Llama 3 para análisis bajo la Teoría de la Reflexividad.
+    Envía el texto a Llama 3 para análisis bajo la Teoría de la Reflexividad,
+    adaptado al contexto del tema.
     """
-    system_prompt = """
-    Eres un analista experto en la Teoría de la Reflexividad de George Soros aplicada a tendencias tecnológicas y de ciberseguridad.
-    Tu objetivo no es solo resumir, sino detectar la divergencia entre la realidad (hechos) y la percepción (sentimiento/hype).
+    categories_str = "\n".join([f"       - \"{c}\"" for c in categories])
+    
+    system_prompt = f"""
+    {context_prompt}
+    Tu objetivo no es solo resumir, sino detectar la divergencia entre la realidad (hechos) y la percepción (sentimiento/hype) bajo la Teoría de la Reflexividad de Soros.
 
     Analiza la noticia y extrae la siguiente información en formato JSON estricto:
 
     1. "sentimiento": Float entre -1.0 (Pánico/Muy Negativo) y 1.0 (Euforia/Muy Positivo).
 
     2. "subjetividad": Float entre 0.0 (Datos puros/Hechos verificables) y 1.0 (Especulación/Rumores/Opinión marketing).
-       *Nota: Una tecnología con mucho hype y alta subjetividad puede ser una burbuja.*
+       *Nota: Una tecnología o activo con mucho hype y alta subjetividad puede ser una burbuja.*
 
     3. "fase_hype": String. Elige una según el Gartner Hype Cycle:
        - "Lanzamiento" (Innovation Trigger)
@@ -61,28 +61,20 @@ def analizar_noticia_reflexividad(texto):
        - "Consolidación" (Slope of Enlightenment)
        - "Madurez" (Plateau of Productivity)
 
-    4. "categoria_cyber": String. Clasifica en una de estas categorías:
-       - "AI Threat Detection"
-       - "CTEM" (Continuous Threat Exposure Management)
-       - "DSPM" (Data Security Posture Management)
-       - "ITDR" (Identity Threat Detection and Response)
-       - "Human Risk Management"
-       - "AI-SPM" (AI Security Posture Management)
-       - "Passkeys/Passwordless"
-       - "General Cybersecurity"
-       - "Vendor News"
+    4. "categoria_cyber": String. (Aunque diga 'categoria_cyber', usa la categoría que mejor encaje de esta lista):
+{categories_str}
        - "Otro"
 
-    5. "entidades": Lista de strings. Empresas, productos o tecnologías clave mencionadas (máximo 5).
+    5. "entidades": Lista de strings. Empresas, activos, productos o personas clave mencionadas (máximo 5).
 
     6. "razonamiento": Breve explicación (máximo 20 palabras) de tu análisis.
 
-    7. "relevancia_tendencia": Float entre 0.0 y 1.0. Qué tan relevante es para las tendencias emergentes de ciberseguridad 2025-2026.
+    7. "relevancia_tendencia": Float entre 0.0 y 1.0. Qué tan relevante es para las tendencias emergentes en este sector para 2025-2026.
 
     IMPORTANTE: Responde SOLO con el JSON, sin texto adicional.
     """
 
-    user_prompt = f"Analiza el siguiente texto de noticia de ciberseguridad:\n\n{texto}"
+    user_prompt = f"Analiza el siguiente texto de noticia:\n\n{texto}"
 
     try:
         completion = client.chat.completions.create(
@@ -91,227 +83,148 @@ def analizar_noticia_reflexividad(texto):
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
             ],
-            temperature=0.1,  # Bajo para respuestas consistentes
-            response_format={"type": "json_object"}  # Forzar salida JSON
+            temperature=0.1,
+            response_format={"type": "json_object"}
         )
         return json.loads(completion.choices[0].message.content)
-    except json.JSONDecodeError as e:
-        print(f"  Error parseando JSON: {e}")
-        return None
     except Exception as e:
-        print(f"  Error en la API: {e}")
+        print(f"  Error en API/JSON: {e}")
         return None
 
 
-def main(max_articles=None, sample_mode=False):
-    """
-    Función principal para analizar las noticias.
-
-    Args:
-        max_articles: Límite de artículos a procesar (None = todos)
-        sample_mode: Si True, procesa solo una muestra para testing
-    """
+def main(theme_id, max_articles=None, sample_mode=False):
     print("=" * 70)
-    print("ANALISIS DE REFLEXIVIDAD - Ciberseguridad con Llama 3 (Groq)")
+    print(f"ANALISIS DE REFLEXIVIDAD: {theme_id}")
     print("=" * 70)
-    print(f"Fecha: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    print(f"Modelo: {MODEL_ID}")
-    print("=" * 70)
-
-    # Verificar API Key
-    if not GROQ_API_KEY:
-        print("ERROR: No se encontro GROQ_API_KEY en el archivo .env")
+    
+    # 1. Validar Configuración
+    if theme_id not in config.INVESTING_THEMES:
+        print(f"Error: Tema '{theme_id}' no encontrado en config.")
         return
 
-    # Verificar archivo
-    if not os.path.exists(INPUT_FILE):
-        print(f"ERROR: No se encuentra el archivo: {INPUT_FILE}")
+    theme_config = config.INVESTING_THEMES[theme_id]
+    theme_dirs = config.get_theme_dirs(theme_id)
+    data_dir = theme_dirs["DATA"]
+    
+    print(f"Directorio de datos: {data_dir}")
+    
+    # 2. Encontrar input file (JSON)
+    pattern = os.path.join(data_dir, "unified_data_*.json")
+    files = glob.glob(pattern)
+    
+    # Filtrar solo archivos RAW (evitar procesar archivos ya analizados si comparten patron, aunque estos se llamaran analyzed_)
+    # Mejor buscamos los que NO empiezan por analyzed_ (que ahora se guardaran aqui)
+    raw_files = [f for f in files if "analyzed_" not in os.path.basename(f)]
+    
+    if not raw_files:
+        print(f"ERROR: No hay archivos de datos raw en {data_dir}")
         return
+        
+    input_file = max(raw_files, key=os.path.getmtime)
+    print(f"Cargando archivo más reciente: {input_file}")
 
-    # Cargar datos
-    print(f"\nCargando archivo: {INPUT_FILE}...")
     try:
-        df = pd.read_csv(INPUT_FILE)
-        print(f"Archivo cargado. {len(df)} articulos encontrados.")
+        with open(input_file, 'r', encoding='utf-8') as f:
+            articles_data = json.load(f)
+        
+        # Convertir a DataFrame para facilitar manejo
+        df = pd.DataFrame(articles_data)
+        print(f"Artículos cargados: {len(df)}")
     except Exception as e:
-        print(f"Error leyendo CSV: {e}")
+        print(f"Error leyendo JSON: {e}")
         return
 
-    # Filtrar solo los que tienen contenido extraído exitosamente
-    if 'extraction_status' in df.columns:
-        df_to_process = df[df['extraction_status'] == 'success'].copy()
-        print(f"Articulos con contenido extraido: {len(df_to_process)}")
-    else:
-        df_to_process = df.copy()
-
-    # Modo sample o límite
+    # 3. Filtrar / Muestrear
     if sample_mode:
-        df_to_process = df_to_process.head(10)
-        print(f"MODO SAMPLE: Procesando solo 10 articulos")
+        df = df.head(5)
+        print("MODO SAMPLE: Procesando solo 5 artículos")
     elif max_articles:
-        df_to_process = df_to_process.head(max_articles)
-        print(f"Limitado a {max_articles} articulos")
+        df = df.head(max_articles)
+        print(f"Limitado a {max_articles} artículos")
 
-    # Lista para resultados
+    # 4. Procesar
     resultados_lista = []
-
-    # Verificar input file dinámicamente si no se pasó
-    global INPUT_FILE
-    if not INPUT_FILE:
-        import glob
-        pattern = os.path.join(DATA_DIR, "gnews_cybersecurity_*.csv")
-        files = glob.glob(pattern)
-        if not files:
-            print(f"ERROR: No hay archivos gnews_ en {DATA_DIR}")
-            return
-        INPUT_FILE = max(files, key=os.path.getmtime)
-
+    
+    context_prompt = theme_config.get("system_prompt_context", "Eres un analista financiero experto.")
+    categories = theme_config.get("categories", ["General", "Other"])
 
     print("\n" + "-" * 100)
-    print(f"{'#':<5} | {'SENT':>5} | {'SUBJ':>5} | {'REL':>5} | {'FASE HYPE':<22} | {'CATEGORIA':<25} | ENTIDADES")
+    print(f"{'#':<5} | {'SENT':>5} | {'SUBJ':>5} | {'CATEGORIA':<25} | TITULO")
     print("-" * 100)
 
     start_time = time.time()
     errores = 0
 
-    for index, (idx, row) in enumerate(df_to_process.iterrows()):
-        # Construir texto a analizar
-        titular = str(row.get('title', ''))
+    for index, row in df.iterrows():
+        # Construir texto
+        titular = row.get('title', '')
+        contenido = row.get('full_text') or row.get('abstract') or row.get('snippet') or ""
+        
+        texto_completo = f"TITULO: {titular}\n\nCONTENIDO: {contenido}"[:3000]
 
-        # Usar abstract si existe, sino full_text, sino snippet
-        contenido = ""
-        if 'abstract' in row and pd.notna(row['abstract']) and row['abstract']:
-            contenido = str(row['abstract'])
-        elif 'full_text' in row and pd.notna(row['full_text']) and row['full_text']:
-            contenido = str(row['full_text'])[:1500]
-        elif 'snippet' in row and pd.notna(row['snippet']):
-            contenido = str(row['snippet'])
+        # LLM Call
+        analisis = analizar_noticia_reflexividad(texto_completo, context_prompt, categories)
 
-        # Texto completo (limitar a 2500 chars para tokens)
-        texto_completo = f"TITULO: {titular}\n\nCONTENIDO: {contenido}"[:2500]
-
-        # Analizar con Llama
-        analisis = analizar_noticia_reflexividad(texto_completo)
+        item = row.to_dict() # Copiar datos originales
 
         if analisis:
-            # Extraer valores con defaults
-            sentimiento = analisis.get('sentimiento', 0)
-            subjetividad = analisis.get('subjetividad', 0)
-            relevancia = analisis.get('relevancia_tendencia', 0)
-            fase_hype = analisis.get('fase_hype', 'N/A')[:22]
-            categoria = analisis.get('categoria_cyber', 'N/A')[:25]
-            entidades = analisis.get('entidades', [])
-
-            # Formatear entidades para display
-            if isinstance(entidades, list):
-                entidades_str = ", ".join(entidades[:3])[:40]
-            else:
-                entidades_str = str(entidades)[:40]
-
-            # Imprimir en tiempo real
-            print(f"{index+1:<5} | {sentimiento:>5.2f} | {subjetividad:>5.2f} | {relevancia:>5.2f} | {fase_hype:<22} | {categoria:<25} | {entidades_str}")
-
-            # Guardar resultado
-            resultados_lista.append({
-                'original_index': idx,
-                'sentimiento': sentimiento,
-                'subjetividad': subjetividad,
-                'relevancia_tendencia': relevancia,
-                'fase_hype': analisis.get('fase_hype', ''),
-                'categoria_cyber': analisis.get('categoria_cyber', ''),
-                'entidades': json.dumps(entidades, ensure_ascii=False) if isinstance(entidades, list) else str(entidades),
-                'razonamiento': analisis.get('razonamiento', ''),
-                'titulo_analizado': titular[:100]
-            })
+            # Inject Analysis
+            item['sentimiento'] = analisis.get('sentimiento', 0)
+            item['subjetividad'] = analisis.get('subjetividad', 0)
+            item['fase_hype'] = analisis.get('fase_hype', 'Unknown')
+            # Fallback for category key name compatibility
+            item['categoria_theme'] = analisis.get('categoria_cyber', 'Other') 
+            # Mantener compatibilidad con dashboard antiguo que busca 'categoria_cyber'
+            item['categoria_cyber'] = item['categoria_theme']
+            
+            item['entidades'] = analisis.get('entidades', [])
+            item['razonamiento'] = analisis.get('razonamiento', '')
+            item['relevancia'] = analisis.get('relevancia_tendencia', 0)
+            
+            # Print status
+            print(f"{index+1:<5} | {item['sentimiento']:>5.2f} | {item['subjetividad']:>5.2f} | {item['categoria_theme'][:25]:<25} | {titular[:40]}...")
+            
         else:
-            print(f"{index+1:<5} | ERROR AL PROCESAR: {titular[:50]}...")
+            print(f"{index+1:<5} | ERROR  |       |                           | {titular[:40]}...")
             errores += 1
-            resultados_lista.append({
-                'original_index': idx,
-                'sentimiento': 0,
-                'subjetividad': 0,
-                'relevancia_tendencia': 0,
-                'fase_hype': 'ERROR',
-                'categoria_cyber': 'ERROR',
-                'entidades': '[]',
-                'razonamiento': 'Error en API',
-                'titulo_analizado': titular[:100]
-            })
-
-        # Rate Limiting para cuenta gratuita de Groq
+            # Default values for failed analysis
+            item['sentimiento'] = 0
+            item['subjetividad'] = 0
+            item['fase_hype'] = 'Error'
+            item['categoria_theme'] = 'Error'
+            item['categoria_cyber'] = 'Error'
+        
+        # Add metadata flag
+        item['is_analyzed'] = True
+        item['analysis_date'] = datetime.now().isoformat()
+        
+        resultados_lista.append(item)
+        
+        # Rate limit
         time.sleep(0.5)
 
-    # Crear DataFrame de resultados
-    df_resultados = pd.DataFrame(resultados_lista)
-
-    # Unir con datos originales
-    df_final = df_to_process.reset_index(drop=True)
-    df_final = pd.concat([df_final, df_resultados.drop('original_index', axis=1)], axis=1)
-
-    # Generar nombres de archivo
+    # 5. Guardar Resultados Enriquecidos
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    output_csv = os.path.join(DATA_DIR, f"cybersecurity_reflexivity_{timestamp}.csv")
-    output_json = os.path.join(DATA_DIR, f"cybersecurity_reflexivity_{timestamp}.json")
-
-    # Guardar CSV
-    df_final.to_csv(output_csv, index=False, encoding='utf-8-sig')
-
-    # Guardar JSON
-    df_final.to_json(output_json, orient='records', indent=2, force_ascii=False)
-
-    # Estadísticas finales
-    elapsed = time.time() - start_time
-
+    output_filename = f"analyzed_reflexivity_{timestamp}.json"
+    output_path = os.path.join(data_dir, output_filename)
+    
+    with open(output_path, 'w', encoding='utf-8') as f:
+        json.dump(resultados_lista, f, indent=2, ensure_ascii=False)
+        
     print("\n" + "=" * 70)
-    print("RESUMEN DEL ANALISIS")
+    print(f"PROCESO COMPLETADO")
+    print(f"Archivo guardado: {output_path}")
+    print(f"Total procesados: {len(resultados_lista)}")
     print("=" * 70)
-    print(f"Articulos procesados: {len(df_to_process)}")
-    print(f"Errores: {errores}")
-    print(f"Tiempo total: {elapsed:.2f} segundos ({elapsed/60:.1f} minutos)")
-    print(f"Velocidad: {len(df_to_process)/elapsed:.2f} articulos/segundo")
-
-    # Estadísticas de sentimiento
-    if len(df_resultados) > 0:
-        print("\n" + "-" * 50)
-        print("ESTADISTICAS DE SENTIMIENTO:")
-        print("-" * 50)
-        print(f"  Promedio: {df_resultados['sentimiento'].mean():.3f}")
-        print(f"  Mediana: {df_resultados['sentimiento'].median():.3f}")
-        print(f"  Min/Max: {df_resultados['sentimiento'].min():.3f} / {df_resultados['sentimiento'].max():.3f}")
-
-        print("\n" + "-" * 50)
-        print("DISTRIBUCION POR FASE DE HYPE:")
-        print("-" * 50)
-        fase_counts = df_resultados['fase_hype'].value_counts()
-        for fase, count in fase_counts.items():
-            print(f"  {fase}: {count} ({100*count/len(df_resultados):.1f}%)")
-
-        print("\n" + "-" * 50)
-        print("DISTRIBUCION POR CATEGORIA:")
-        print("-" * 50)
-        cat_counts = df_resultados['categoria_cyber'].value_counts()
-        for cat, count in cat_counts.head(10).items():
-            print(f"  {cat}: {count}")
-
-    print("\n" + "=" * 70)
-    print("ARCHIVOS GUARDADOS:")
-    print(f"  CSV: {output_csv}")
-    print(f"  JSON: {output_json}")
-    print("=" * 70)
-
-    return df_final
 
 
 if __name__ == "__main__":
-    # Opciones de ejecución:
-    # 1. Modo sample (10 artículos para testing rápido):
-    #    df = main(sample_mode=True)
-
-    # 2. Procesar N artículos:
-    #    df = main(max_articles=100)
-
-    # 3. Procesar todos (puede tardar mucho con cuenta gratuita):
-    #    df = main()
-
-    # Por defecto: modo sample para testing
-    df = main(sample_mode=True)
+    import argparse
+    parser = argparse.ArgumentParser(description="Analyze news with LLM for a specific theme")
+    parser.add_argument("--theme", type=str, required=True, help="Theme ID from config.py")
+    parser.add_argument("--sample", action="store_true", help="Run only on a few articles for testing")
+    parser.add_argument("--max", type=int, default=None, help="Max articles to process")
+    
+    args = parser.parse_args()
+    
+    main(theme_id=args.theme, sample_mode=args.sample, max_articles=args.max)

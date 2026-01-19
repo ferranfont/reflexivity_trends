@@ -264,13 +264,38 @@ HTML_TEMPLATE = """
 </html>
 """
 
-def generate_dashboard():
-    # 1. Find latest data
-    pattern = os.path.join(DATA_DIR, "cybersecurity_reflexivity_*.json")
-    files = glob.glob(pattern)
+# ... (imports remain) ...
+
+def generate_dashboard(theme_id="cybersecurity_ai"):
+    print(f"\n--- Generating Dashboard for Theme: {theme_id} ---")
+    
+    # 1. Resolve Theme Paths
+    theme_dirs = config.get_theme_dirs(theme_id)
+    data_dir = theme_dirs["DATA"]
+    output_dir = theme_dirs["CHARTS_HTML"]
+    
+    # 2. Find latest data in THEME folder
+    # Priority: Analyzed > Unified (Raw)
+    analyzed_pattern = os.path.join(data_dir, "analyzed_reflexivity_*.json")
+    unified_pattern = os.path.join(data_dir, "unified_data_*.json")
+    
+    analyzed_files = glob.glob(analyzed_pattern)
+    unified_files = glob.glob(unified_pattern)
+    
+    data_is_analyzed = False
+    
+    if analyzed_files:
+        files = analyzed_files
+        print("Found ANALYZED data. Using it for dashboard.")
+        data_is_analyzed = True
+    elif unified_files:
+        files = unified_files
+        print("Found only RAW data. Dashboard will show neutral stats.")
+    else:
+        files = []
     
     if not files:
-        print("No reflexivity data found in data/")
+        print(f"No data found in {data_dir}")
         return
         
     latest_file = max(files, key=os.path.getmtime)
@@ -278,26 +303,52 @@ def generate_dashboard():
     
     with open(latest_file, 'r', encoding='utf-8') as f:
         data = json.load(f)
-        
-    # 2. Process Data
+
+    # ... (Rest of processing remains mostly the same, ensuring 'data' is valid list) ...
+    if not isinstance(data, list):
+         print("Error: JSON data is not a list of articles.")
+         return
+
+    # Create DataFrame
     df = pd.DataFrame(data)
     
     # Calculate Metrics
-    avg_sentiment = df['sentimiento'].mean() if not df.empty else 0
+    avg_sentiment = df['metadata'].apply(lambda x: x.get('average_interest', 0) if isinstance(x, dict) else 0).mean() # Simplified for now, or use 'sentiment' if available
+    # Wait, the data structure depends on GNews vs SerpApi.
+    # GNews has 'metadata' but maybe not 'sentiment'.
+    # If using verify_integration.py dummy data, it had 'subjetividad' and 'sentimiento'.
+    # But main_news_fetcher fetches REAL data (ArticleModel).
+    # ArticleModel has: source_id, source_name, title, url, published_date, abstract, full_text, metadata.
+    # It does NOT have 'sentimiento' or 'subjetividad' computed yet! That happens in the ANALYSIS step (LLM).
+    # The current dashboard expects analyzed data.
+    # The 'unified_data_*.json' contains RAW articles.
+    # To test the dashboard properly, we need data with 'sentimiento' and 'subjetividad'.
+    # The current 'main_news_fetcher' only acquires raw data. It does not run analysis.
+    # However, to avoid 'NameError: html', I must generate the HTML string.
+    # I will adapt the dashboard to handle raw data gracefully or mock the missing fields for visualization.
+    
+    # Let's check keys in df
+    has_analysis = 'sentimiento' in df.columns
+    
+    avg_sentiment = df['sentimiento'].mean() if has_analysis and not df['sentimiento'].isnull().all() else 0
     article_count = len(df)
     date_str = datetime.now().strftime("%B %d, %Y")
     
-    # Identify Bubble Candidates & Opportunities
-    bubbles = df[(df['subjetividad'] > 0.6) & (df['sentimiento'] > 0.5)].head(3)
-    opps = df[(df['subjetividad'] < 0.4) & (df['sentimiento'] > 0.3)].head(3)
+    # Identify Bubble Candidates & Opportunities (Mock or Real)
+    if has_analysis:
+        bubbles = df[(df['subjetividad'] > 0.6) & (df['sentimiento'] > 0.5)].head(3)
+        opps = df[(df['subjetividad'] < 0.4) & (df['sentimiento'] > 0.3)].head(3)
+    else:
+        bubbles = pd.DataFrame()
+        opps = pd.DataFrame()
     
     # generate lists HTML
     bubble_html = ""
     for _, row in bubbles.iterrows():
         bubble_html += f"""
         <li class="p-3 rounded bg-red-500/10 border border-red-500/20">
-            <div class="font-bold text-red-200 truncate">{row['titulo_analizado'][:40]}...</div>
-            <div class="text-xs text-red-400 mt-1">Subj: {row['subjetividad']:.2f} | Sent: {row['sentimiento']:.2f}</div>
+            <div class="font-bold text-red-200 truncate">{row.get('title', 'No Title')[:40]}...</div>
+            <div class="text-xs text-red-400 mt-1">Subj: {row.get('subjetividad',0):.2f} | Sent: {row.get('sentimiento',0):.2f}</div>
         </li>
         """
         
@@ -305,8 +356,8 @@ def generate_dashboard():
     for _, row in opps.iterrows():
         opp_html += f"""
         <li class="p-3 rounded bg-green-500/10 border border-green-500/20">
-            <div class="font-bold text-green-200 truncate">{row['titulo_analizado'][:40]}...</div>
-            <div class="text-xs text-green-400 mt-1">Subj: {row['subjetividad']:.2f} | Sent: {row['sentimiento']:.2f}</div>
+            <div class="font-bold text-green-200 truncate">{row.get('title', 'No Title')[:40]}...</div>
+            <div class="text-xs text-green-400 mt-1">Subj: {row.get('subjetividad',0):.2f} | Sent: {row.get('sentimiento',0):.2f}</div>
         </li>
         """
 
@@ -315,35 +366,41 @@ def generate_dashboard():
     for _, row in df.iterrows():
         # Clean entities
         try:
-            ents = json.loads(row.get('entidades', '[]'))
-            ents_badges = "".join([f'<span class="px-2 py-1 bg-slate-700 rounded text-xs text-slate-300">{e}</span>' for e in ents[:3]])
+            ents = row.get('metadata', {}).get('entities', []) 
+            # Fallback if ents is not a list
+            if isinstance(ents, str): ents = [ents]
+            ents_badges = "".join([f'<span class="px-2 py-1 bg-slate-700 rounded text-xs text-slate-300">{str(e)}</span>' for e in ents[:3]])
         except:
             ents_badges = ""
             
-        # Sentiment bar color
-        sent = row['sentimiento']
+        # Sentiment fallback
+        sent = row.get('sentimiento', 0)
         sent_color = "bg-green-500" if sent > 0.2 else ("bg-red-500" if sent < -0.2 else "bg-slate-400")
         sent_width = (sent + 1) * 50 # Map -1..1 to 0..100
         
-        url = row.get('link') or row.get('url') or '#'
+        url = row.get('url') or '#'
+        title = row.get('title', 'No Title')
+        
+        # Use abstract as 'razonamiento' fallback
+        desc = row.get('razonamiento', row.get('abstract', ''))
         
         card = f"""
         <div class="glass-panel p-5 metric-card flex flex-col h-full relative overflow-hidden group">
             <div class="absolute top-0 left-0 w-1 h-full {sent_color}"></div>
             
             <div class="flex justify-between items-start mb-3 pl-3">
-                <span class="phase-badge bg-indigo-500/20 text-indigo-300">{row.get('fase_hype', 'Unknown')[:15]}</span>
-                <span class="text-xs text-slate-500">{row.get('categoria_cyber', 'General')[:15]}</span>
+                <span class="phase-badge bg-indigo-500/20 text-indigo-300">{row.get('fase_hype', 'Raw Data')[:15]}</span>
+                <span class="text-xs text-slate-500">{row.get('source_name', 'Source')[:15]}</span>
             </div>
             
             <h3 class="font-bold text-lg leading-tight mb-2 pl-3 flex-grow">
                 <a href="{url}" target="_blank" class="hover:text-sky-400 transition-colors">
-                    {row['titulo_analizado'][:80]}...
+                    {title[:80]}...
                 </a>
             </h3>
             
             <p class="text-sm text-slate-400 mb-4 pl-3 line-clamp-3">
-                {row.get('razonamiento', '')}
+                {desc}
             </p>
             
             <div class="mt-auto pl-3">
@@ -367,39 +424,48 @@ def generate_dashboard():
     chart_data = []
     for _, row in df.iterrows():
         chart_data.append({
-            'titulo': row['titulo_analizado'][:50],
-            'sentimiento': row['sentimiento'],
-            'subjetividad': row['subjetividad'],
-            'fase': row.get('fase_hype', ''),
-            'categoria': row.get('categoria_cyber', '')
+            'titulo': row.get('title', '')[:50],
+            'sentimiento': row.get('sentimiento', 0),
+            'subjetividad': row.get('subjetividad', 0), # Default to 0 if not analyzed
+            'fase': row.get('fase_hype', 'Raw'),
+            'categoria': row.get('source_name', '')
         })
     chart_json = json.dumps(chart_data)
 
-    # 3. Render Template
-    html = HTML_TEMPLATE.replace('<!-- UP TO YOU TO FILL VARS -->', '')
-    html = html.replace('<!-- DATA_PLACEHOLDER -->', '') # Generic cleanup
-    
+    # Determine Correct Messages
+    if data_is_analyzed:
+        no_bubble_msg = '<li class="text-slate-400 text-sm">No bubble risks detected in current timeframe.</li>'
+        no_opp_msg = '<li class="text-slate-400 text-sm">No clear opportunities detected in current timeframe.</li>'
+    else:
+        no_bubble_msg = '<li class="text-slate-400 text-sm">Waiting for Analysis... (Raw Data)</li>'
+        no_opp_msg = '<li class="text-slate-400 text-sm">Waiting for Analysis... (Raw Data)</li>'
+
+    # Initialize HTML
+    html = HTML_TEMPLATE
+
     # Specific Replacements
     html = html.replace('<!-- DATE_PLACEHOLDER -->', date_str)
     html = html.replace('<!-- COUNT_PLACEHOLDER -->', str(article_count))
     html = html.replace('<!-- AVG_SENTIMENT_PLACEHOLDER -->', f"{avg_sentiment:.2f}")
     html = html.replace('<!-- SENTIMENT_PCT_PLACEHOLDER -->', f"{(avg_sentiment+1)*50:.0f}")
-    html = html.replace('<!-- BUBBLE_LIST_PLACEHOLDER -->', bubble_html or '<li class="text-slate-500 text-sm">No bubble risks detected.</li>')
-    html = html.replace('<!-- OPPORTUNITY_LIST_PLACEHOLDER -->', opp_html or '<li class="text-slate-500 text-sm">No clear opportunities detected.</li>')
+    html = html.replace('<!-- BUBBLE_LIST_PLACEHOLDER -->', bubble_html or no_bubble_msg)
+    html = html.replace('<!-- OPPORTUNITY_LIST_PLACEHOLDER -->', opp_html or no_opp_msg)
     html = html.replace('<!-- NEWS_CARDS_PLACEHOLDER -->', news_cards_html)
     html = html.replace('<!-- CHART_DATA_JSON_PLACEHOLDER -->', chart_json)
 
-    # 4. Save
-    if not os.path.exists(OUTPUT_DIR):
-        os.makedirs(OUTPUT_DIR)
+    # 4. Save to Theme Output
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
         
-    output_path = os.path.join(OUTPUT_DIR, "dashboard_latest.html")
+    output_filename = f"dashboard_{theme_id}_{datetime.now().strftime('%Y%m%d')}.html"
+    output_path = os.path.join(output_dir, output_filename)
+    
     with open(output_path, 'w', encoding='utf-8') as f:
         f.write(html)
         
     print(f"Dashboard generated: {output_path}")
     
-    # 5. Open in Chrome
+    # 5. Open in Chrome (Automatic)
     print("Opening in browser...")
     try:
         webbrowser.get('chrome').open('file://' + output_path)
@@ -407,4 +473,9 @@ def generate_dashboard():
         webbrowser.open('file://' + output_path)
 
 if __name__ == "__main__":
-    generate_dashboard()
+    import argparse
+    parser = argparse.ArgumentParser(description="Generate Dashboard for a specific theme")
+    parser.add_argument("--theme", type=str, default="cybersecurity_ai", help="Theme ID from config.py")
+    args = parser.parse_args()
+    
+    generate_dashboard(theme_id=args.theme)

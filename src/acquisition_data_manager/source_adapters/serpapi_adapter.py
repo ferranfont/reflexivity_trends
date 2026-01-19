@@ -26,7 +26,7 @@ class SerpApiTrendsAdapter(BaseSource):
         if not self.api_key:
             print("  [SerpApi] WARNING: No API Key found in config or environment.")
 
-    def fetch(self, query: str) -> List[StandardArticle]:
+    def fetch(self, query: str, output_dirs=None) -> List[StandardArticle]:
         if not self.api_key:
             return []
             
@@ -89,14 +89,13 @@ class SerpApiTrendsAdapter(BaseSource):
                 except Exception as e:
                     print(f"  [SerpApi] Validation Error for {query}: {e}")
                     # If validation fails, we skip this article and continue
-                    # Or you might want to return an empty list or raise the error
-                    continue
+                    return []
                 
                 print(f"  [SerpApi] Generated trend report.")
 
                 # --- EXPORT CSV ---
                 try:
-                    # Create dataframe from timeline
+                    # Create dataframe
                     timeline_df = pd.DataFrame([
                         {
                             "date": point.get("date", ""),
@@ -106,9 +105,12 @@ class SerpApiTrendsAdapter(BaseSource):
                         for point in timeline
                     ])
                     
-                    
-                    # Define path from config
-                    data_dir = config.DIRS["TRENDS_CSV"]
+                    # Define path: Prefer passed context, fallback to global
+                    if output_dirs and "TRENDS_CSV" in output_dirs:
+                        data_dir = output_dirs["TRENDS_CSV"]
+                    else:
+                        data_dir = config.DIRS["TRENDS_CSV"]
+                        
                     os.makedirs(data_dir, exist_ok=True)
                     
                     

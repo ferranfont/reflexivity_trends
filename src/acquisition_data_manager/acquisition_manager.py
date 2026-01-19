@@ -8,9 +8,9 @@ from datetime import datetime
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 import config
 
-from .source_adapters.gnews_adapter import GNewsAdapter
-from .source_adapters.serpapi_adapter import SerpApiTrendsAdapter
-from .base_source import BaseSource, StandardArticle
+from src.acquisition_data_manager.source_adapters.gnews_adapter import GNewsAdapter
+from src.acquisition_data_manager.source_adapters.serpapi_adapter import SerpApiTrendsAdapter
+from src.acquisition_data_manager.base_source import BaseSource, StandardArticle
 
 class UnifiedAcquisitionManager:
     """
@@ -38,10 +38,9 @@ class UnifiedAcquisitionManager:
             print("  [!] Twitter Adapter Enabled (Not Implemented)")
             # self.sources.append(TwitterAdapter())
 
-    def fetch_all(self, search_terms: List[str]) -> List[StandardArticle]:
+    def fetch_all(self, search_terms: List[str], output_dirs=None) -> List[StandardArticle]:
         """
         Runs all enabled adapters for the given search terms.
-        Aggregates results into a single list of StandardArticle.
         """
         all_articles: List[StandardArticle] = []
         
@@ -49,20 +48,31 @@ class UnifiedAcquisitionManager:
             print(f"\n--- Processing Term: '{term}' ---")
             for source in self.sources:
                 try:
-                    articles = source.fetch(term)
+                    # Check if fetch accepts 'output_dirs' (new signature)
+                    import inspect
+                    sig = inspect.signature(source.fetch)
+                    if 'output_dirs' in sig.parameters:
+                        articles = source.fetch(term, output_dirs=output_dirs)
+                    else:
+                        articles = source.fetch(term)
+                        
                     all_articles.extend(articles)
                 except Exception as e:
                     print(f"Error fetching from {source}: {e}")
                     
         return all_articles
         
-    def save_to_json(self, articles: List[StandardArticle], filename: str = None):
+    def save_to_json(self, articles: List[StandardArticle], filename: str = None, output_dir: str = None):
         """Saves the aggregated results to a JSON file"""
         if not filename:
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             filename = f"unified_data_{timestamp}.json"
             
-        output_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", filename)
+        # Use provided output_dir or default to legacy path
+        if output_dir:
+            output_path = os.path.join(output_dir, filename)
+        else:
+            output_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", filename)
         
         # Ensure data dir exists
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
