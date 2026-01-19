@@ -1,81 +1,77 @@
-# Google Trends Analysis - pyTrends
+# reflexivity_trends - Reflexivity Analysis for Cybersecurity News
 
-Análisis de tendencias de búsqueda en Google usando Python con múltiples métodos (pytrends y SERPAPI).
+An advanced trend analysis system that applies George Soros' **Theory of Reflexivity** to cybersecurity news. It detects market anomalies, hype bubbles, and solid investment opportunities by contrasting **Sentiment** (how people feel) against **Subjectivity** (how factual the information is).
 
-## Descripción
+## 📂 Project Structure
 
-Este proyecto permite analizar tendencias de búsqueda en Google para los términos "Inteligencia Artificial" y "Crypto" durante los últimos 5 años en España.
+```text
+reflexivity_trends/
+├── data/                  # CSVs, JSONs, and intermediate data
+├── outputs/               # Generated visualizations and reports
+├── src/                   # Source code
+│   ├── acquisition_data_manager/       # Data gathering modules
+│   │   └── main_news_fetcher.py
+│   ├── attribution_analysis/ # LLM & Logic modules
+│   │   └── find_metadata_IA_llama_LLM.py
+│   ├── database/          # Knowledge graph modules
+│   │   └── atribution_mapping_neo4j.py
+│   └── visualization/     # Dashboard generation
+│       └── dashboard_generator.py (Coming Soon)
+├── .env                   # Configuration (API Keys)
+└── .gitignore
+```
 
-## Características
+## 🚀 Features
 
-- 📊 Visualización con matplotlib (gráficos estáticos)
-- 🌐 Visualización interactiva con Plotly (gráficos web)
-- 💾 Exportación de datos a CSV
-- 🔑 Soporte para SERPAPI con variables de entorno
-- 🆓 Opción gratuita con pytrends
+*   **Acquisition**: Fetches news from Google News based on trending cybersecurity topics (AI Threat Detection, CTEM, etc.).
+*   **Analysis (Llama 3)**: Analyzes each article for:
+    *   **Sentiment**: (-1.0 to 1.0)
+    *   **Subjectivity**: (0.0 to 1.0) - The "Hype" factor.
+    *   **Hype Phase**: Innovation Trigger, Peak of Inflated Expectations, etc.
+*   **Knowledge Graph (Neo4j)**: Maps relationships between News, Companies, and Concepts to detect narrative contagion.
+*   **Visualization**: Interactive web dashboard to spot bubbles and opportunities (Coming Soon).
 
-## Archivos
+## 🛠️ Setup
 
-### Scripts principales:
+1.  **Install Dependencies**:
+    ```bash
+    pip install pandas pytrends matplotlib plotly python-dotenv gnews groq neo4j sentence-transformers
+    ```
 
-1. **import pandas as pd.py** - Versión con pytrends (gratuita)
-2. **from serpapi import GoogleSearch.py** - Versión con SERPAPI (requiere API key)
-3. **from serpapi import GoogleTrends.py** - Versión con gráficos interactivos Plotly
+2.  **Configuration**:
+    Create a `.env` file in the root directory:
+    ```ini
+    GROQ_API_KEY=your_groq_api_key
+    NEO4J_URI=bolt://localhost:7687
+    NEO4J_USER=neo4j
+    NEO4J_PASSWORD=your_password
+    ```
 
-## Instalación
+## 🏃 Usage
 
+### 1. Fetch News
 ```bash
-# Instalar dependencias
-pip install pandas pytrends matplotlib plotly python-dotenv serpapi
+python src/acquisition_data_manager/main_news_fetcher.py
 ```
+*Outputs to `data/gnews_cybersecurity_YYYYMMDD.csv`*
 
-## Configuración
-
-1. Crea un archivo `.env` en la raíz del proyecto:
-```
-SERPAPI_API_KEY=tu_api_key_aqui
-```
-
-2. Obtén tu API key gratis en: https://serpapi.com/
-
-## Uso
-
-### Opción 1: PyTrends (Gratis)
+### 2. Analyze with Llama 3
 ```bash
-python "import pandas as pd.py"
+python src/attribution_analysis/find_metadata_IA_llama_LLM.py
 ```
+*Outputs to `data/cybersecurity_reflexivity_YYYYMMDD.json`*
 
-### Opción 2: SERPAPI con matplotlib
+### 3. Ingest into Neo4j
 ```bash
-python "from serpapi import GoogleSearch.py"
+python src/database/atribution_mapping_neo4j.py
 ```
+*Populates your local Neo4j database.*
 
-### Opción 3: SERPAPI con gráficos interactivos
-```bash
-python "from serpapi import GoogleTrends.py"
-```
+## 🧠 Theory of Reflexivity in Tech
 
-## Salida
+*   **Bubble Candidate**: High Sentiment (>0.7) + High Subjectivity (>0.6). The narrative is outpacing the facts.
+*   **Solid Opportunity**: High Sentiment (>0.5) + Low Subjectivity (<0.4). Optimism is backed by data.
+*   **FUD (Fear, Uncertainty, Doubt)**: Low Sentiment + High Subjectivity. Negative rumors without basis.
 
-Los scripts generan:
-- 📈 Gráficos PNG (alta resolución 300 dpi)
-- 📄 Archivo CSV con los datos
-- 🌐 HTML interactivo (versión Plotly)
-
-## Tecnologías
-
-- Python 3.x
-- pandas
-- matplotlib
-- plotly
-- pytrends
-- serpapi
-- python-dotenv
-
-## Licencia
-
+## 📄 License
 MIT
-
-## Autor
-
-Análisis de tendencias de Google Trends

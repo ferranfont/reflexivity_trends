@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git init:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nInitial commit: Google Trends Analysis with Python\n\nAdded three analysis scripts:\n- pytrends version \\(free\\)\n- SERPAPI with matplotlib charts\n- SERPAPI with interactive Plotly charts\n\nFeatures:\n- 5-year trend analysis for AI and Crypto\n- CSV data export\n- High-resolution charts \\(matplotlib\\)\n- Interactive web charts \\(Plotly\\)\n- Environment variable support for API keys\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git remote add:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "Bash(git remote:*)"
+    ]
+  }
+}

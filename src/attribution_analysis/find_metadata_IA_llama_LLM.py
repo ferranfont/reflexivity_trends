@@ -20,11 +20,17 @@ from dotenv import load_dotenv
 # Cargar variables de entorno
 load_dotenv()
 
+# Add project root to path to find .env if running from src
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+
+
 # --- CONFIGURACIÓN ---
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 # Ruta del archivo de entrada (el más reciente de SerpAPI)
-INPUT_FILE = r"D:\PYTHON\ALGOS\pyTrends\cybersecurity_news_20260118_184923.csv"
+DATA_DIR = os.path.join(os.getcwd(), "data")
+INPUT_FILE = None # Will find latest in main
 
 # Configuración del Modelo
 MODEL_ID = "llama-3.3-70b-versatile"  # Modelo potente y rápido
@@ -149,6 +155,18 @@ def main(max_articles=None, sample_mode=False):
     # Lista para resultados
     resultados_lista = []
 
+    # Verificar input file dinámicamente si no se pasó
+    global INPUT_FILE
+    if not INPUT_FILE:
+        import glob
+        pattern = os.path.join(DATA_DIR, "gnews_cybersecurity_*.csv")
+        files = glob.glob(pattern)
+        if not files:
+            print(f"ERROR: No hay archivos gnews_ en {DATA_DIR}")
+            return
+        INPUT_FILE = max(files, key=os.path.getmtime)
+
+
     print("\n" + "-" * 100)
     print(f"{'#':<5} | {'SENT':>5} | {'SUBJ':>5} | {'REL':>5} | {'FASE HYPE':<22} | {'CATEGORIA':<25} | ENTIDADES")
     print("-" * 100)
@@ -232,8 +250,8 @@ def main(max_articles=None, sample_mode=False):
 
     # Generar nombres de archivo
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    output_csv = f"D:\\PYTHON\\ALGOS\\pyTrends\\cybersecurity_reflexivity_{timestamp}.csv"
-    output_json = f"D:\\PYTHON\\ALGOS\\pyTrends\\cybersecurity_reflexivity_{timestamp}.json"
+    output_csv = os.path.join(DATA_DIR, f"cybersecurity_reflexivity_{timestamp}.csv")
+    output_json = os.path.join(DATA_DIR, f"cybersecurity_reflexivity_{timestamp}.json")
 
     # Guardar CSV
     df_final.to_csv(output_csv, index=False, encoding='utf-8-sig')

@@ -19,8 +19,12 @@ from dotenv import load_dotenv
 # Cargar variables de entorno
 load_dotenv()
 
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+
+
 # --- CONFIGURACIÓN ---
-DATA_DIR = r"D:\PYTHON\ALGOS\pyTrends"
+DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data")
 
 # Neo4j Connection (Actualiza con tus credenciales)
 # Para Neo4j Desktop: bolt://localhost:7687
