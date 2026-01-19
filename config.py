@@ -4,6 +4,21 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
+# --- Output Directories ---
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+OUTPUTS_ROOT = os.path.join(BASE_DIR, "outputs")
+
+DIRS = {
+    "TRENDS_CSV": os.path.join(OUTPUTS_ROOT, "serapi_trends"),
+    "CHARTS_HTML": os.path.join(OUTPUTS_ROOT, "charts_html"),
+    "CHARTS_PNG": os.path.join(OUTPUTS_ROOT, "charts_png"),
+    "DATA": os.path.join(BASE_DIR, "data"),
+}
+
+# Ensure directories exist
+for path in DIRS.values():
+    os.makedirs(path, exist_ok=True)
+
 # --- Feature Flags ---
 # Enable/Disable specific data sources
 ENABLE_USE_GNEWS = True

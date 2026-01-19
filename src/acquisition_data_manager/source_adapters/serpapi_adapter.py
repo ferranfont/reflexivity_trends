@@ -4,7 +4,9 @@ from datetime import datetime
 from typing import List
 from serpapi import GoogleSearch
 from ..base_source import BaseSource, StandardArticle
+from src.models import ArticleModel
 import json
+import pandas as pd
 
 # Add root directory to path to import config
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -64,7 +66,8 @@ class SerpApiTrendsAdapter(BaseSource):
                    f"Average interest: {avg_value:.1f}/100. "
                 )
                 
-                article: StandardArticle = {
+                # Construct article dict
+                article_data = {
                     "source_id": self.source_id,
                     "source_name": "Google Trends (SerpApi)",
                     "title": f"Google Search Trend Analysis: {query}",
@@ -77,9 +80,49 @@ class SerpApiTrendsAdapter(BaseSource):
                         "data_points": len(timeline)
                     }
                 }
-                articles.append(article)
-                print(f"  [SerpApi] Generated trend report.")
                 
+                # Validate with Pydantic
+                try:
+                    article_model = ArticleModel(**article_data)
+                    article = article_model.model_dump()
+                    articles.append(article)
+                except Exception as e:
+                    print(f"  [SerpApi] Validation Error for {query}: {e}")
+                    # If validation fails, we skip this article and continue
+                    # Or you might want to return an empty list or raise the error
+                    continue
+                
+                print(f"  [SerpApi] Generated trend report.")
+
+                # --- EXPORT CSV ---
+                try:
+                    # Create dataframe from timeline
+                    timeline_df = pd.DataFrame([
+                        {
+                            "date": point.get("date", ""),
+                            "timestamp": point.get("timestamp", ""),
+                            "value": point.get("values", [{}])[0].get("extracted_value", 0)
+                        }
+                        for point in timeline
+                    ])
+                    
+                    
+                    # Define path from config
+                    data_dir = config.DIRS["TRENDS_CSV"]
+                    os.makedirs(data_dir, exist_ok=True)
+                    
+                    
+                    date_str = datetime.now().strftime('%Y%m%d_%H%M%S')
+                    safe_query = query.replace(" ", "_").replace("/", "-")
+                    csv_filename = f"serpapi_sub_{safe_query}_{date_str}.csv"
+                    csv_path = os.path.join(data_dir, csv_filename)
+                    
+                    timeline_df.to_csv(csv_path, index=False)
+                    print(f"  [SerpApi] Saved numerical data to: {csv_path}")
+                    
+                except Exception as csv_e:
+                    print(f"  [SerpApi] Error saving CSV: {csv_e}")
+
             return articles
 
         except Exception as e:

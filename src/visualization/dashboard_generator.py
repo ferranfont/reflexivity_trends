@@ -7,9 +7,13 @@ import pandas as pd
 from datetime import datetime
 
 # Configuration
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-DATA_DIR = os.path.join(BASE_DIR, "data")
-OUTPUT_DIR = os.path.join(BASE_DIR, "outputs")
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+import config
+
+DATA_DIR = config.DIRS["DATA"]
+# Saving dashboard to CHARTS_HTML to keep outputs organized
+OUTPUT_DIR = config.DIRS["CHARTS_HTML"]
 
 # Modern HTML Template with Glassmorphism and Dark Mode
 HTML_TEMPLATE = """

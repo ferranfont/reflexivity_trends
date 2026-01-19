@@ -44,22 +44,31 @@ ENABLE_USE_TWITTER = False
 DEFAULT_SEARCH_TERMS = ["AI Threat Detection", "CTEM", ...]
 ```
 
-## 📝 Formato de Salida (Standard JSON)
+## 📝 Formato de Salida y Validación
 
-Independientemente de la fuente, el sistema genera un archivo JSON unificado en `data/` con la siguiente estructura por artículo:
+El sistema utiliza **Pydantic** (`src/models.py`) para validar rigurosamente la calidad de los datos antes de procesarlos.
+
+### 1. Salida JSON Unificada (Pipeline Principal)
+Independientemente de la fuente, el sistema genera un archivo JSON unificado en `data/` (definido en `config.DIRS['DATA']`) con la siguiente estructura validada por `ArticleModel`:
 
 ```json
 {
   "source_id": "gnews",
   "source_name": "Google News",
-  "title": "Titulo de la noticia",
-  "url": "https://...",
+  "title": "Titulo de la noticia (str)",
+  "url": "https://... (HttpUrl válido)",
   "published_date": "2024-01-01T10:00:00",
   "abstract": "Resumen o snippet del contenido...",
   "full_text": "Texto completo (opcional)",
   "metadata": { ... }
 }
 ```
+
+### 2. Salida CSV Raw (Específico para Tendencias)
+Además del JSON estándar, el adaptador `SerpApiTrendsAdapter` exporta automáticamente los datos numéricos brutos (series temporales) a archivos CSV:
+*   **Ubicación**: `outputs/serapi_trends/` (Definido en `config.DIRS['TRENDS_CSV']`)
+*   **Formato**: `serpapi_sub_{query}_{fecha}.csv`
+*   **Contenido**: Fechas, timestamps y valores numéricos crudos (0-100) para análisis cuantitativo paralelo.
 
 ## 🚀 Cómo añadir una nueva fuente
 

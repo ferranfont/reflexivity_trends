@@ -14,12 +14,12 @@ sys.stdout.reconfigure(encoding='utf-8')
 load_dotenv()
 
 # Add project root to path
+# Add project root to path
 import sys
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 sys.path.append(BASE_DIR)
+import config
 
-DATA_DIR = os.path.join(BASE_DIR, "data")
-OUTPUT_DIR = os.path.join(BASE_DIR, "outputs")
 
 # --- 1. CONFIGURACIÓN (Desde .env) ---
 URI = os.getenv("NEO4J_URI")
@@ -84,7 +84,7 @@ def main():
 
     plt.title("Grafo de Inversión Reflexiva (Matplotlib)")
     plt.title("Grafo de Inversión Reflexiva (Matplotlib)")
-    png_path = os.path.join(OUTPUT_DIR, "grafo_inversion.png")
+    png_path = os.path.join(config.DIRS["CHARTS_PNG"], "grafo_inversion.png")
     plt.savefig(png_path)
     print(f"✅ Imagen guardada como '{png_path}'")
 
@@ -100,7 +100,7 @@ def main():
     net.toggle_physics(True)
 
     # Guardar y abrir
-    nombre_archivo = os.path.join(OUTPUT_DIR, "grafo_interactivo.html")
+    nombre_archivo = os.path.join(config.DIRS["CHARTS_HTML"], "grafo_interactivo.html")
     net.save_graph(nombre_archivo)
     print(f"✅ Archivo web guardado: {nombre_archivo}")
 

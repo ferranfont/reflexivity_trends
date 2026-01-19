@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import List
 from gnews import GNews
 from ..base_source import BaseSource, StandardArticle
+from src.models import ArticleModel
 
 # Add root directory to path to import config
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -38,7 +39,7 @@ class GNewsAdapter(BaseSource):
                 if not snippet or snippet == " ":
                     snippet = item.get("title", "") # Fallback to title
 
-                article: StandardArticle = {
+                article_data = {
                     "source_id": self.source_id,
                     "source_name": item.get("publisher", {}).get("title", "Google News"),
                     "title": item.get("title", "No Title"),
@@ -50,7 +51,14 @@ class GNewsAdapter(BaseSource):
                         "original_publisher": item.get("publisher", {})
                     }
                 }
-                articles.append(article)
+                
+                # Validate
+                try:
+                    article_model = ArticleModel(**article_data)
+                    articles.append(article_model.model_dump())
+                except Exception as e:
+                    print(f"  [GNews] Validation Error: {e}")
+                    continue
                 
             print(f"  [GNews] Found {len(articles)} articles.")
             return articles

@@ -1,5 +1,15 @@
 from abc import ABC, abstractmethod
 from typing import List, TypedDict, Optional, Dict, Any
+# Adjust import based on file structure: src/acquisition_data_manager/base_source.py -> src/models.py
+# Using relative import assuming package structure
+try:
+    from ...models import ArticleModel
+except ImportError:
+    # Fallback for direct execution
+    import sys
+    import os
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+    from src.models import ArticleModel
 
 class StandardArticle(TypedDict):
     """
