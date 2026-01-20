@@ -140,6 +140,11 @@ HTML_TEMPLATE = """
             </div>
         </div>
     </header>
+    
+    <!-- Navigation / Sub-header -->
+    <div class="flex justify-end mb-6">
+        <!-- GRAPH_LINK_PLACEHOLDER -->
+    </div>
 
     <!-- Main Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
@@ -452,6 +457,22 @@ def generate_dashboard(theme_id="cybersecurity_ai"):
     html = html.replace('<!-- OPPORTUNITY_LIST_PLACEHOLDER -->', opp_html or no_opp_msg)
     html = html.replace('<!-- NEWS_CARDS_PLACEHOLDER -->', news_cards_html)
     html = html.replace('<!-- CHART_DATA_JSON_PLACEHOLDER -->', chart_json)
+
+    # Check for Graph Viz
+    graph_path = os.path.join(theme_dirs["VISUALIZATION"], "graph_network.html")
+    if os.path.exists(graph_path):
+        # Dashboard is in charts_html/, Graph is in visualization/
+        # Relative path: ../visualization/graph_network.html
+        graph_link = f"""
+        <a href="../visualization/graph_network.html" target="_blank" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg flex items-center gap-2 transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            View Knowledge Graph
+        </a>
+        """
+    else:
+        graph_link = ""
+    
+    html = html.replace('<!-- GRAPH_LINK_PLACEHOLDER -->', graph_link)
 
     # 4. Save to Theme Output
     if not os.path.exists(output_dir):

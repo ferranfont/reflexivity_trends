@@ -11,9 +11,15 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 import config
 
-from acquisition_manager import UnifiedAcquisitionManager
+try:
+    from src.acquisition_data_manager.acquisition_manager import UnifiedAcquisitionManager
+except ImportError:
+    try:
+        from .acquisition_manager import UnifiedAcquisitionManager
+    except ImportError:
+        from acquisition_manager import UnifiedAcquisitionManager
 
-def main():
+def main(target_theme=None):
     print("="*60)
     print("REFLEXIVITY TRENDS - UNIFIED DATA ACQUISITION")
     print("="*60)
@@ -22,9 +28,20 @@ def main():
     manager = UnifiedAcquisitionManager()
     
     # 2. Iterate over Investing Themes
-    themes = config.INVESTING_THEMES
+    all_themes = config.INVESTING_THEMES
     
-    for theme_id, theme_data in themes.items():
+    if target_theme:
+        if target_theme not in all_themes:
+            print(f"Error: Theme '{target_theme}' not found in configuration.")
+            return
+        # Filter to just the target theme
+        themes_to_process = {target_theme: all_themes[target_theme]}
+        print(f"🎯 Target Mode: Processing ONLY theme '{target_theme}'")
+    else:
+        themes_to_process = all_themes
+        print(f"🔄 Bulk Mode: Processing ALL enabled themes")
+    
+    for theme_id, theme_data in themes_to_process.items():
         if not theme_data.get("enabled", False):
             print(f"\n[SKIP] Theme '{theme_data['name']}' is DISABLED or FROZEN.")
             continue
@@ -53,7 +70,12 @@ def main():
             print(f"\nNo data found for theme: {theme_data['name']}")
 
     print("\n" + "="*60)
-    print("All enabled themes processed.")
+    print("Acquisition process completed.")
 
 if __name__ == "__main__":
-    main()
+    # helper for manual run
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--theme", help="Specific theme to run")
+    args = parser.parse_args()
+    main(target_theme=args.theme)

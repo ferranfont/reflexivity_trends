@@ -1,0 +1,139 @@
+[
+  {
+    "source_id": "gnews",
+    "source_name": "en.ain.ua",
+    "title": "Danish-Ukrainian startup Dropla Tech raises €2.4M to scale AI-powered threat detection and demining solutions - en.ain.ua",
+    "url": "https://news.google.com/rss/articles/CBMiZkFVX3lxTE9pa0JWV3ZMWDZoc1VCaHJNMnZzeUNISHZyai1kdkdnNXp0djEzZDZYTHN0S2Y5eVlVZkl3TG1peXI2QkJqbnBzRnlVVDZHUzZ2R2NrN0dIUmZlMkZ2UW0ybks0RFVCdw?oc=5&hl=en-US&gl=US&ceid=US:en",
+    "published_date": "Mon, 18 Aug 2025 07:00:00 GMT",
+    "abstract": "Danish-Ukrainian startup Dropla Tech raises €2.4M to scale AI-powered threat detection and demining solutions  en.ain.ua",
+    "full_text": null,
+    "metadata": {
+      "original_publisher": {
+        "href": "https://en.ain.ua",
+        "title": "en.ain.ua"
+      }
+    },
+    "sentimiento": 0.8,
+    "subjetividad": 0.4,
+    "fase_hype": "Lanzamiento",
+    "categoria_theme": "AI Threat Detection",
+    "categoria_cyber": "AI Threat Detection",
+    "entidades": [
+      "Dropla Tech"
+    ],
+    "razonamiento": "Inversión en startup",
+    "relevancia": 0.7,
+    "is_analyzed": true,
+    "analysis_date": "2026-01-19T20:54:57.040131"
+  },
+  {
+    "source_id": "gnews",
+    "source_name": "Dark Reading | Security",
+    "title": "1M Farmers Insurance Customers' Data Compromised - Dark Reading | Security",
+    "url": "https://news.google.com/rss/articles/CBMikwFBVV95cUxNZFMteWZxNVRhY0EyZ1BYVWk0Njl3ZnQ5aU0wZzgtbHhNcFNTa0xwcTlycXJTYjdQbnBJZFp3elBlOEltakFWeDB5UnRVelFBLTRuNUktdjljN2R1M25VMS1faG80cDBLalh5ODktVGNQZTdxU29JZEc0Y01CSzZHcTBUOWYzVHJUUGpPWVl2U3pIZ2c?oc=5&hl=en-US&gl=US&ceid=US:en",
+    "published_date": "Tue, 26 Aug 2025 07:00:00 GMT",
+    "abstract": "1M Farmers Insurance Customers' Data Compromised  Dark Reading | Security",
+    "full_text": null,
+    "metadata": {
+      "original_publisher": {
+        "href": "https://www.darkreading.com",
+        "title": "Dark Reading | Security"
+      }
+    },
+    "sentimiento": -0.8,
+    "subjetividad": 0.2,
+    "fase_hype": "General Cybersecurity",
+    "categoria_theme": "General Cybersecurity",
+    "categoria_cyber": "General Cybersecurity",
+    "entidades": [
+      "Farmers Insurance"
+    ],
+    "razonamiento": "Brecha de seguridad",
+    "relevancia": 0.6,
+    "is_analyzed": true,
+    "analysis_date": "2026-01-19T20:54:57.945657"
+  },
+  {
+    "source_id": "gnews",
+    "source_name": "solutionsreview.com",
+    "title": "Identity Management and Information Security News for the Week of September 16; Updates from Sumo Logic, SandboxAQ, Dig Security, and More - solutionsreview.com",
+    "url": "https://news.google.com/rss/articles/CBMikAJBVV95cUxQb3lQbmVkVE10bGc5NmN6RF9aYnp1ckU3WW04dFJDN3BUdWtGbVdGb1VVdkdmLTVqaXh1clY3WnZyRTRHZ3NSb2h5NVhsNTRfb2RyZnZxWlJ4aVMyWGN1WmpOR2VFUTZUQk5SekNsTDBKNGtuZVFmNEltd2JaUTVKQ0dUTVNfcjRpVFRPdFdBUzZNQ3hmakdDQklBSW5LczFfcC1wV2YyYjVpcTN3V1Ntb09sNHQzZmxIa3pBTzVuQzdXeDZBQ1l1MDZ6TnNNejlzQWtjTnJ2WUZFU2FnUGNva0FPMTFNcjA5VnZnSE9pR2N3b2h3a0VncUE5clhSajMzSDNlRmJIVWhrYlUtdXVQSg?oc=5&hl=en-US&gl=US&ceid=US:en",
+    "published_date": "Thu, 15 Sep 2022 07:00:00 GMT",
+    "abstract": "Identity Management and Information Security News for the Week of September 16; Updates from Sumo Logic, SandboxAQ, Dig Security, and More  solutionsreview.com",
+    "full_text": null,
+    "metadata": {
+      "original_publisher": {
+        "href": "https://solutionsreview.com",
+        "title": "solutionsreview.com"
+      }
+    },
+    "sentimiento": 0.2,
+    "subjetividad": 0.4,
+    "fase_hype": "Consolidación",
+    "categoria_theme": "General Cybersecurity",
+    "categoria_cyber": "General Cybersecurity",
+    "entidades": [
+      "Sumo Logic",
+      "SandboxAQ",
+      "Dig Security"
+    ],
+    "razonamiento": "Noticia de actualizaciones",
+    "relevancia": 0.6,
+    "is_analyzed": true,
+    "analysis_date": "2026-01-19T20:54:58.798814"
+  },
+  {
+    "source_id": "gnews",
+    "source_name": "Dark Reading | Security",
+    "title": "Community Health Center Data Breach Affects 1M Patients - Dark Reading | Security",
+    "url": "https://news.google.com/rss/articles/CBMirgFBVV95cUxQUll4SFluOHlkcmxIcDUwTGs1U0xwUlkzV0JVVnc4YXNtenJiSS1DenBGMjhDR3NmdVRVU3VHVnpHUEFSN0FrS1BYRTdnc1paT3Q2R0czei1uSUdhS1U5dmpxLVRkMGY2NW42c0dRZ0IxTXVfb0lIQUNHVENiLWdGa0dDVF9GRXBwUy1CV0RUV3VrS01neDVOWFhGTF81cXluVzE2NWF5czJ2Mk5mcHc?oc=5&hl=en-US&gl=US&ceid=US:en",
+    "published_date": "Fri, 31 Jan 2025 08:00:00 GMT",
+    "abstract": "Community Health Center Data Breach Affects 1M Patients  Dark Reading | Security",
+    "full_text": null,
+    "metadata": {
+      "original_publisher": {
+        "href": "https://www.darkreading.com",
+        "title": "Dark Reading | Security"
+      }
+    },
+    "sentimiento": -0.8,
+    "subjetividad": 0.2,
+    "fase_hype": "General Cybersecurity",
+    "categoria_theme": "General Cybersecurity",
+    "categoria_cyber": "General Cybersecurity",
+    "entidades": [
+      "Community Health Center"
+    ],
+    "razonamiento": "Brecha de seguridad",
+    "relevancia": 0.6,
+    "is_analyzed": true,
+    "analysis_date": "2026-01-19T20:54:59.597593"
+  },
+  {
+    "source_id": "gnews",
+    "source_name": "Dark Reading | Security",
+    "title": "1M NextGen Patient Records Compromised in Data Breach - Dark Reading | Security",
+    "url": "https://news.google.com/rss/articles/CBMimgFBVV95cUxOakpodHhGSUxPaFhtOUYtN0ZDZkxtTUVBUndEMVpkZFBEVXM3bVpjOUhLUDloRUxJVFl3TlpXTlBEa0UtUWpJQ29WdHZNd3gxT2ZLZkYyNWZmLUxzYmNqeEduZkdGUVkyV294WGJfUlA5bnEwRkZxNTJ5TnQ1VHhBOG5adWdhV1dfbUhtRzktOHkwa3VVMXlaakd3?oc=5&hl=en-US&gl=US&ceid=US:en",
+    "published_date": "Mon, 08 May 2023 07:00:00 GMT",
+    "abstract": "1M NextGen Patient Records Compromised in Data Breach  Dark Reading | Security",
+    "full_text": null,
+    "metadata": {
+      "original_publisher": {
+        "href": "https://www.darkreading.com",
+        "title": "Dark Reading | Security"
+      }
+    },
+    "sentimiento": -0.8,
+    "subjetividad": 0.2,
+    "fase_hype": "General Cybersecurity",
+    "categoria_theme": "General Cybersecurity",
+    "categoria_cyber": "General Cybersecurity",
+    "entidades": [
+      "NextGen"
+    ],
+    "razonamiento": "Brecha de datos",
+    "relevancia": 0.6,
+    "is_analyzed": true,
+    "analysis_date": "2026-01-19T20:55:00.408626"
+  }
+]

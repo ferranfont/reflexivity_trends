@@ -402,21 +402,32 @@ def print_results(results, title):
             print(f"   Razonamiento: {r['razonamiento']}")
 
 
-def main():
-    """Función principal."""
+def main(theme_id):
+    """Función principal para ingesta por tema."""
     print("=" * 70)
-    print("ANALISIS DE REFLEXIVIDAD CON NEO4J")
+    print(f"ANALISIS DE REFLEXIVIDAD CON NEO4J - Theme: {theme_id}")
     print("Grafo de Conocimiento + Busqueda Semantica Vectorial")
     print("=" * 70)
     print(f"Fecha: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
-    # 1. Buscar archivo JSON más reciente
-    json_file = find_latest_reflexivity_file()
-    if not json_file:
-        print("\nERROR: No se encontraron archivos de reflexividad.")
-        print("Ejecuta primero: python llama_LLM.py")
+    # 1. Buscar archivo JSON más reciente (Usando Config)
+    # Importar config de forma relativa si es necesario, pero ya está en sys.path
+    try:
+        import config
+    except ImportError:
+         sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+         import config
+         
+    theme_dirs = config.get_theme_dirs(theme_id)
+    data_dir = theme_dirs["DATA"]
+    pattern = os.path.join(data_dir, "analyzed_reflexivity_*.json")
+    files = glob(pattern)
+    
+    if not files:
+        print(f"\nERROR: No se encontraron archivos analizados en {data_dir}.")
         return
 
+    json_file = max(files, key=os.path.getmtime)
     print(f"\nArchivo de datos: {json_file}")
 
     # 2. Cargar datos
@@ -432,73 +443,16 @@ def main():
         return
 
     try:
-        # Configurar esquema
+        # Configurar esquema (Indices, Vectores)
         graph.setup_schema()
 
-        # Ingestar datos
+        # Ingestar datos (Embeddings + Grafo)
         graph.ingest_all(datos)
 
-        # 4. Mostrar estadísticas
+        # 4. Mostrar estadísticas simples
         print("\n" + "=" * 60)
-        print("ESTADISTICAS DEL GRAFO")
-        print("=" * 60)
         stats = graph.get_graph_stats()
-        for key, value in stats.items():
-            print(f"  {key.capitalize()}: {value}")
-
-        # 5. Top entidades
-        print("\n" + "-" * 40)
-        print("TOP 10 ENTIDADES MENCIONADAS:")
-        print("-" * 40)
-        entities = graph.get_top_entities(10)
-        for e in entities:
-            print(f"  {e['empresa']}: {e['menciones']} menciones")
-
-        # 6. Análisis por categoría
-        print("\n" + "-" * 40)
-        print("ANALISIS POR CATEGORIA:")
-        print("-" * 40)
-        categories = graph.get_category_analysis()
-        for c in categories:
-            print(f"  {c['categoria']}: {c['total']} noticias")
-            print(f"    Sentimiento: {c['sentimiento_promedio']:.2f} | Subjetividad: {c['subjetividad_promedio']:.2f}")
-
-        # 7. Distribución de fases del hype
-        print("\n" + "-" * 40)
-        print("DISTRIBUCION POR FASE DEL HYPE:")
-        print("-" * 40)
-        phases = graph.get_hype_distribution()
-        for p in phases:
-            print(f"  {p['fase']}: {p['total']} ({p['sentimiento_promedio']:.2f} sent. promedio)")
-
-        # 8. Detectar burbujas potenciales
-        bubbles = graph.find_bubble_candidates()
-        print_results(bubbles, "ALERTA: POSIBLES BURBUJAS (Alta subjetividad + Alto sentimiento)")
-
-        # 9. Encontrar oportunidades
-        opportunities = graph.find_opportunities()
-        print_results(opportunities, "OPORTUNIDADES (Bajo hype + Buenos fundamentales)")
-
-        # 10. Búsqueda semántica de ejemplo
-        print("\n" + "=" * 60)
-        print("BUSQUEDA SEMANTICA VECTORIAL")
-        print("=" * 60)
-
-        query = "detección de amenazas con inteligencia artificial machine learning"
-        print(f"\nBuscando: '{query}'")
-        results = graph.query_similar(query, n_results=5)
-        print_results(results, "RESULTADOS DE BUSQUEDA SEMANTICA")
-
-        print("\n" + "=" * 70)
-        print("ANALISIS COMPLETADO")
-        print("=" * 70)
-        print("\nEl grafo esta listo en Neo4j. Puedes explorarlo con:")
-        print("  - Neo4j Browser: http://localhost:7474")
-        print("  - Consultas Cypher personalizadas")
-        print("\nEjemplo de consulta Cypher:")
-        print("  MATCH (n:Noticia)-[:MENCIONA]->(e:Empresa)")
-        print("  WHERE e.nombre = 'Microsoft'")
-        print("  RETURN n.titulo, n.sentimiento, n.fase_hype")
+        print(f"Estadísticas del Grafo: {stats}")
 
     except Exception as e:
         print(f"\nError durante el proceso: {e}")
@@ -510,4 +464,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--theme", required=True, help="Theme ID")
+    args = parser.parse_args()
+    main(args.theme)

@@ -76,6 +76,7 @@ def get_theme_dirs(theme_id):
         "TRENDS_CSV": os.path.join(theme_root_out, "serapi_trends"),
         "CHARTS_HTML": os.path.join(theme_root_out, "charts_html"),
         "CHARTS_PNG": os.path.join(theme_root_out, "charts_png"),
+        "VISUALIZATION": os.path.join(theme_root_out, "visualization"),
         "DATA": theme_data_dir,
     }
     
