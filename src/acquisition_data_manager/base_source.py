@@ -25,14 +25,42 @@ class StandardArticle(TypedDict):
     full_text: Optional[str]# Full content if available
     metadata: Dict[str, Any]# Extra data (e.g., trend scores, author, likes)
 
+class StandardMetric(TypedDict):
+    """
+    Standardized quantitative observation (time-series point) for all metric sources.
+    Articles feed the LLM pipeline; metrics feed the reflexivity indices (RDI/NSI/R0).
+    """
+    source_id: str          # e.g. 'wikipedia', 'stocktwits', 'polymarket'
+    entity: str             # ticker, wiki page title, market slug, keyword
+    metric: str             # e.g. 'wiki_pageviews', 'st_bull_ratio', 'pm_prob_yes'
+    event_date: str         # YYYY-MM-DD the value refers to
+    value: float
+    metadata: Dict[str, Any]
+
+
 class BaseSource(ABC):
     """
     Abstract Base Class that all data acquisition adapters must implement.
     """
-    
+
     @abstractmethod
     def fetch(self, query: str) -> List[StandardArticle]:
         """
         Fetch data for a given query and return a list of StandardArticle objects.
+        """
+        pass
+
+
+class BaseMetricSource(ABC):
+    """
+    Abstract Base Class for quantitative/time-series sources
+    (Wikipedia pageviews, StockTwits volume, Polymarket odds, EDGAR insider counts...).
+    """
+
+    @abstractmethod
+    def fetch_metrics(self, theme_id: str, theme_config: Dict[str, Any]) -> List[StandardMetric]:
+        """
+        Fetch all metric points for a theme. Must never raise on partial failure:
+        log and return what could be collected.
         """
         pass

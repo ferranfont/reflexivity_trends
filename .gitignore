@@ -38,6 +38,9 @@ wheels/
 *.csv
 *.html
 
+# Local point-in-time metrics store (binary SQLite + regenerable caches, daily churn)
+data/metrics/
+
 # OS
 .DS_Store
 Thumbs.db

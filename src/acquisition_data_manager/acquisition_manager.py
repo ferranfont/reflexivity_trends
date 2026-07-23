@@ -33,7 +33,17 @@ class UnifiedAcquisitionManager:
         if config.ENABLE_USE_SERPAPI_TRENDS:
             print("  [+] SerpApi Trends Adapter Enabled")
             self.sources.append(SerpApiTrendsAdapter())
-            
+
+        if getattr(config, "ENABLE_USE_GDELT_ARTICLES", False):
+            print("  [+] GDELT Articles Adapter Enabled (free, no key)")
+            from src.acquisition_data_manager.source_adapters.gdelt_adapter import GdeltAdapter
+            self.sources.append(GdeltAdapter())
+
+        if getattr(config, "ENABLE_USE_EDGAR_FULLTEXT", False):
+            print("  [+] SEC EDGAR Full-Text Adapter Enabled (free, no key)")
+            from src.acquisition_data_manager.source_adapters.edgar_fulltext_adapter import EdgarFullTextAdapter
+            self.sources.append(EdgarFullTextAdapter())
+
         if config.ENABLE_USE_TWITTER:
             print("  [!] Twitter Adapter Enabled (Not Implemented)")
             # self.sources.append(TwitterAdapter())

@@ -2,13 +2,29 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-# --- Feature Flags ---
+# --- Feature Flags (article sources -> LLM pipeline) ---
 ENABLE_USE_GNEWS = True
 ENABLE_USE_SERPAPI_TRENDS = False
 ENABLE_USE_TWITTER = False
+ENABLE_USE_GDELT_ARTICLES = True      # Free, no key (global news index)
+ENABLE_USE_EDGAR_FULLTEXT = True      # Free, no key (SEC filings full-text search)
+
+# --- Feature Flags (metric sources -> snapshot_daily.py / SQLite time series) ---
+ENABLE_METRIC_WIKIPEDIA = True        # Free, no key (attention layer)
+ENABLE_METRIC_GDELT_VOLUME = True     # Free, no key (media contagion layer)
+ENABLE_METRIC_STOCKTWITS = True       # Free, no key (retail crowd layer)
+ENABLE_METRIC_POLYMARKET = True       # Free, no key (informed consensus layer)
+ENABLE_METRIC_EDGAR_INSIDER = True    # Free, no key (insiders layer, Form 4)
 
 # --- API Keys ---
 SERPAPI_API_KEY = os.getenv("SERPAPI_API_KEY", "")
+
+# --- HTTP identification (SEC and Wikimedia require a descriptive User-Agent) ---
+HTTP_USER_AGENT = os.getenv(
+    "HTTP_USER_AGENT",
+    "ReflexivityTrends/1.0 (research; contact: ferran@orderbooktrading.com)",
+)
+EDGAR_USER_AGENT = os.getenv("EDGAR_USER_AGENT", HTTP_USER_AGENT)
 
 # Google News Config
 GNEWS_LANGUAGE = 'en'
@@ -33,9 +49,19 @@ INVESTING_THEMES = {
         ],
         "system_prompt_context": "Eres un analista experto en Ciberseguridad e Inteligencia Artificial, especializado en detectar hype vs utilidad real en nuevas tecnologías de defensa y ataque.",
         "categories": [
-            "AI Threat Detection", "CTEM", "DSPM", "ITDR", "Human Risk Management", 
+            "AI Threat Detection", "CTEM", "DSPM", "ITDR", "Human Risk Management",
             "AI-SPM", "Passkeys/Passwordless", "General Cybersecurity", "Vendor News", "Other"
-        ]
+        ],
+        # --- Metric-layer config (snapshot_daily.py) ---
+        # Capa A/C: retail crowd (StockTwits) e insiders (EDGAR Form 4)
+        "tickers": ["CRWD", "PANW", "S", "ZS", "FTNT", "OKTA"],
+        # Capa B: atencion agregada (titulos EXACTOS de articulos de en.wikipedia)
+        "wikipedia_pages": [
+            "CrowdStrike", "Palo Alto Networks", "Zscaler", "Fortinet",
+            "SentinelOne", "Okta, Inc.", "Endpoint security", "Computer security"
+        ],
+        # Capa D: consenso informado (filtro sobre preguntas de mercados Polymarket)
+        "market_keywords": ["cybersecurity", "cyberattack", "hack", "AI safety", "data breach"]
     },
     "china_real_estate": {
         "enabled": False,  # DISABLED
